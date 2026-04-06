@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  APPROVED
+  REJECTED
+  QUALIFIED
+  CLOSED
+}
+
+enum PublicationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Program {
+  id          String            @id @default(cuid())
+  slug        String            @unique
+  name        String
+  ageRange    String
+  duration    String
+  format      String
+  description String
+  highlights  String[]
+  status      PublicationStatus @default(DRAFT)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model Testimonial {
+  id          String            @id @default(cuid())
+  parentName  String
+  childName   String
+  programName String
+  quote       String
+  status      PublicationStatus @default(DRAFT)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model DemoRequest {
+  id              String     @id @default(cuid())
+  parentName      String
+  childName       String
+  childAge        Int
+  city            String
+  email           String
+  phone           String
+  programInterest String
+  preferredSlot   String
+  notes           String?
+  status          LeadStatus @default(NEW)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+}
+
+model ContactMessage {
+  id          String     @id @default(cuid())
+  name        String
+  email       String
+  phone       String
+  enquiryType String
+  message     String
+  status      LeadStatus @default(NEW)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model FranchiseApplication {
+  id         String     @id @default(cuid())
+  name       String     @map("fullName")
+  email      String
+  phone      String
+  city       String
+  experience String?    @map("background")
+  message    String?
+  status     LeadStatus @default(NEW)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@map("FranchiseLead")
+}

@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  --color-sand-50: #f8f4ec;
+  --color-sand-100: #f2ead9;
+  --color-sand-200: #e6d7bb;
+  --color-navy-50: #eff5fb;
+  --color-navy-100: #d9e6f4;
+  --color-navy-200: #bdd1ea;
+  --color-navy-500: #3d74a9;
+  --color-navy-700: #1b476f;
+  --color-navy-900: #10253d;
+  --color-coral-400: #ef9378;
+  --color-coral-500: #e47b63;
+  --color-coral-600: #d7654e;
+  --color-gold-400: #efc264;
+  --color-gold-500: #dda948;
+  --color-mint-400: #8ad0bb;
+  --color-mint-500: #58af93;
+  --color-ink-600: #4b5563;
+  --color-ink-900: #0f172a;
+  --font-sans: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background-color: #f8f4ec;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(239, 194, 100, 0.18), transparent 24%),
+    radial-gradient(circle at top right, rgba(88, 175, 147, 0.14), transparent 24%),
+    linear-gradient(180deg, #fffdf9 0%, #f8f4ec 42%, #f4ecdd 100%);
+  color: #0f172a;
+  font-family: var(--font-sans);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+}
+
+a {
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background-color: #efc264;
+  color: #10253d;
+}
