@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { ButtonLink, buttonClassName } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { navigationItems } from "@/lib/site-data";
 import { cn } from "@/lib/utils";
 
@@ -58,8 +59,22 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="hidden lg:flex">
-          <ButtonLink href="/book-demo">Book demo</ButtonLink>
+        <div className="hidden items-center gap-3 lg:flex">
+          <ButtonLink
+            href="/dashboard/login"
+            variant="secondary"
+            analyticsEvent="dashboard_login_cta_click"
+            analyticsPayload={{ location: "header_desktop" }}
+          >
+            Student Login
+          </ButtonLink>
+          <ButtonLink
+            href="/book-demo"
+            analyticsEvent="demo_cta_click"
+            analyticsPayload={{ location: "header_desktop" }}
+          >
+            Book demo
+          </ButtonLink>
         </div>
 
         <button
@@ -117,9 +132,26 @@ export function SiteHeader() {
               </Link>
             ))}
             <Link
+              href="/dashboard/login"
+              className={buttonClassName("secondary", "w-full")}
+              onClick={() => {
+                trackAnalyticsEvent("dashboard_login_cta_click", {
+                  location: "header_mobile",
+                });
+                setIsOpen(false);
+              }}
+            >
+              Student Login
+            </Link>
+            <Link
               href="/book-demo"
               className={buttonClassName("primary", "mt-1 w-full")}
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                trackAnalyticsEvent("demo_cta_click", {
+                  location: "header_mobile",
+                });
+                setIsOpen(false);
+              }}
             >
               Book demo
             </Link>

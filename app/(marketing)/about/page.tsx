@@ -23,6 +23,11 @@ export default function AboutPage() {
         eyebrow="About us"
         title="A child-first abacus company built around discipline, joy, and confidence"
         description="Learn 'N' Fun Abacus was created to make mental math training feel inspiring for children and reassuring for parents."
+        highlights={[
+          "Child-first learning philosophy",
+          "Warm parent communication",
+          "Structured academic progression",
+        ]}
       />
 
       <section className="py-12 sm:py-24">
@@ -69,6 +74,7 @@ export default function AboutPage() {
       <section className="py-12 sm:py-24">
         <Container>
           <SectionHeading
+            align="center"
             eyebrow="Core values"
             title="What guides every interaction with children and parents"
             description="Our values shape how we teach, communicate progress, and build long-term trust with families."
@@ -97,6 +103,7 @@ export default function AboutPage() {
       <section className="py-12 sm:py-24">
         <Container>
           <SectionHeading
+            align="center"
             eyebrow="Leadership"
             title="A team that blends academic structure with child-friendly delivery"
             description="Our leadership philosophy is simple: children grow best when instruction feels clear, warm, and consistently encouraging."
@@ -124,7 +131,7 @@ export default function AboutPage() {
 
       <section className="pb-14 pt-4 sm:pb-24 sm:pt-8">
         <Container>
-          <div className="rounded-[28px] bg-navy-900 px-5 py-8 text-white shadow-[0_26px_70px_rgba(16,37,61,0.18)] sm:rounded-[36px] sm:px-10 sm:py-14">
+          <div className="rounded-[28px] bg-[linear-gradient(135deg,#10253d_0%,#16385c_56%,#225e88_100%)] px-5 py-8 text-white shadow-[0_26px_70px_rgba(16,37,61,0.18)] sm:rounded-[36px] sm:px-10 sm:py-14">
             <h2 className="text-3xl font-semibold sm:text-4xl">
               Want to see our teaching style in action?
             </h2>

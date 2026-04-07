@@ -3,6 +3,7 @@ import { BookDemoForm } from "@/components/forms/book-demo-form";
 import { Container } from "@/components/ui/container";
 import { PageHero } from "@/components/ui/page-hero";
 import { demoExpectations } from "@/lib/site-data";
+import { getWhatsAppLink } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
   title: "Book Demo",
@@ -11,6 +12,10 @@ export const metadata: Metadata = {
 };
 
 export default function BookDemoPage() {
+  const whatsAppLink = getWhatsAppLink(
+    "Hi, I'm interested in Learn N Fun Abacus classes",
+  );
+
   return (
     <>
       <PageHero
@@ -18,12 +23,17 @@ export default function BookDemoPage() {
         eyebrow="Book demo"
         title="Start with a free class and a simple parent consultation"
         description="Share a few details and we&apos;ll help you find a comfortable starting point for your child."
+        highlights={[
+          "Free guided first session",
+          "Level recommendation included",
+          "Parent questions answered clearly",
+        ]}
       />
 
       <section className="pb-14 pt-3 sm:pb-24 sm:pt-6">
         <Container className="grid gap-6 sm:gap-8 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="rounded-[28px] border border-white/80 bg-white/90 p-5 shadow-[0_22px_55px_rgba(16,37,61,0.08)] sm:rounded-[36px] sm:p-8">
-            <BookDemoForm />
+            <BookDemoForm whatsAppLink={whatsAppLink} />
           </div>
           <div className="space-y-4 sm:space-y-6">
             <div className="rounded-[24px] border border-mint-400/35 bg-white/80 px-4 py-3 text-sm text-navy-700 shadow-[0_16px_36px_rgba(16,37,61,0.06)] sm:rounded-[28px] sm:px-5 sm:py-4">

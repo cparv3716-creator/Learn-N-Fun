@@ -3,6 +3,7 @@ import { FranchiseApplicationForm } from "@/components/forms/franchise-applicati
 import { Container } from "@/components/ui/container";
 import { PageHero } from "@/components/ui/page-hero";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { getWhatsAppLink } from "@/lib/whatsapp";
 import { faqItems, franchiseBenefits, franchiseSteps } from "@/lib/site-data";
 
 export const metadata: Metadata = {
@@ -12,12 +13,21 @@ export const metadata: Metadata = {
 };
 
 export default function FranchisePage() {
+  const whatsAppLink = getWhatsAppLink(
+    "Hi, I'm interested in Learn N Fun Abacus classes",
+  );
+
   return (
     <>
       <PageHero
         eyebrow="Franchise"
         title="Grow a meaningful education business with a warm, proven brand"
         description="Our franchise model is designed for entrepreneurs who want operational clarity, strong academic support, and a child-centered brand they can stand behind."
+        highlights={[
+          "Thoughtful expansion model",
+          "Academic and launch support",
+          "Clear partner communication",
+        ]}
         actions={[
           { href: "/contact", label: "Enquire now" },
           {
@@ -31,6 +41,7 @@ export default function FranchisePage() {
       <section className="py-12 sm:py-24">
         <Container>
           <SectionHeading
+            align="center"
             eyebrow="Why partner with us"
             title="A franchise model built for thoughtful expansion"
             description="We focus on operational simplicity, quality teaching systems, and local-market confidence for each partner."
@@ -106,9 +117,10 @@ export default function FranchisePage() {
       <section className="py-12 sm:py-24">
         <Container>
           <SectionHeading
+            align="center"
             eyebrow="FAQ"
             title="Common franchise questions"
-            description="These answers give a clear phase 1 overview. In a later phase, they can be managed from the admin dashboard."
+            description="These answers give a clear picture of how the model is designed to support thoughtful, quality-led growth."
           />
           <div className="mt-8 grid gap-4 sm:mt-12 sm:gap-6 lg:grid-cols-2">
             {faqItems.map((faq) => (
@@ -155,7 +167,7 @@ export default function FranchisePage() {
           </div>
 
           <div className="rounded-[28px] border border-white/80 bg-white/90 p-5 shadow-[0_22px_55px_rgba(16,37,61,0.08)] sm:rounded-[36px] sm:p-8">
-            <FranchiseApplicationForm />
+            <FranchiseApplicationForm whatsAppLink={whatsAppLink} />
           </div>
         </Container>
       </section>

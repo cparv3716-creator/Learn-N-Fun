@@ -19,6 +19,11 @@ export default function ProgramsPage() {
         eyebrow="Programs"
         title="Age-based abacus programs that grow with every child"
         description="Each program is built to strengthen concentration, mental math fluency, and confidence while keeping the classroom experience lively and clear."
+        highlights={[
+          "Age-based pathways",
+          "Hybrid-friendly class formats",
+          "Clear parent guidance at every level",
+        ]}
         actions={[
           { href: "/book-demo", label: "Book a demo" },
           { href: "/contact", label: "Talk to our team", variant: "secondary" },
@@ -38,6 +43,7 @@ export default function ProgramsPage() {
       <section className="py-12 sm:py-24">
         <Container>
           <SectionHeading
+            align="center"
             eyebrow="Class experience"
             title="Flexible delivery without losing structure"
             description="The program design keeps quality high across weekday, weekend, and hybrid-friendly formats."
@@ -63,6 +69,7 @@ export default function ProgramsPage() {
       <section className="py-12 sm:py-24">
         <Container>
           <SectionHeading
+            align="center"
             eyebrow="Progress path"
             title="A learning roadmap parents can clearly follow"
             description="We keep the progression visible, supportive, and motivating so children know what comes next."
@@ -90,7 +97,7 @@ export default function ProgramsPage() {
 
       <section className="pb-14 pt-4 sm:pb-24 sm:pt-8">
         <Container>
-          <div className="rounded-[28px] bg-navy-900 px-5 py-8 text-white shadow-[0_26px_70px_rgba(16,37,61,0.18)] sm:rounded-[36px] sm:px-10 sm:py-14">
+          <div className="rounded-[28px] bg-[linear-gradient(135deg,#10253d_0%,#16385c_56%,#225e88_100%)] px-5 py-8 text-white shadow-[0_26px_70px_rgba(16,37,61,0.18)] sm:rounded-[36px] sm:px-10 sm:py-14">
             <h2 className="text-3xl font-semibold sm:text-4xl">
               Need help choosing the right level?
             </h2>

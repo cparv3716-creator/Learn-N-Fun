@@ -19,6 +19,11 @@ export default function TestimonialsPage() {
         eyebrow="Testimonials"
         title="The strongest proof comes from the families we work with"
         description="Parents consistently tell us that their children become more focused, self-assured, and willing to challenge themselves."
+        highlights={[
+          "Visible confidence gains",
+          "Better focus at home",
+          "Warm classroom experience",
+        ]}
       />
 
       <section className="py-10 sm:py-16">
@@ -26,7 +31,7 @@ export default function TestimonialsPage() {
           {companyStats.map((stat) => (
             <div
               key={stat.label}
-              className="rounded-[24px] border border-sand-200 bg-sand-100/75 p-4 sm:rounded-[28px] sm:p-5"
+              className="rounded-[24px] border border-white/80 bg-white/85 p-4 shadow-[0_18px_45px_rgba(16,37,61,0.06)] sm:rounded-[28px] sm:p-5"
             >
               <p className="text-2xl font-semibold text-navy-900 sm:text-3xl">
                 {stat.value}
@@ -40,9 +45,10 @@ export default function TestimonialsPage() {
       <section className="pb-14 pt-4 sm:pb-24 sm:pt-6">
         <Container>
           <SectionHeading
+            align="center"
             eyebrow="Family feedback"
             title="Real experiences across multiple age groups and learning levels"
-            description="These testimonials are mock content for phase 1, structured so future admin-managed data can drop in without changing the page layout."
+            description="These stories reflect the kind of classroom confidence, focus, and support families consistently value."
           />
           <div className="mt-8 grid gap-5 sm:mt-12 sm:gap-6 xl:grid-cols-3">
             {testimonials.map((testimonial) => (
@@ -57,7 +63,7 @@ export default function TestimonialsPage() {
 
       <section className="pb-14 pt-4 sm:pb-24">
         <Container>
-          <div className="rounded-[28px] bg-navy-900 px-5 py-8 text-white shadow-[0_26px_70px_rgba(16,37,61,0.18)] sm:rounded-[36px] sm:px-10 sm:py-14">
+          <div className="rounded-[28px] bg-[linear-gradient(135deg,#10253d_0%,#16385c_56%,#225e88_100%)] px-5 py-8 text-white shadow-[0_26px_70px_rgba(16,37,61,0.18)] sm:rounded-[36px] sm:px-10 sm:py-14">
             <h2 className="text-3xl font-semibold sm:text-4xl">
               Ready to create this kind of progress for your child?
             </h2>

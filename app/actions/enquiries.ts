@@ -71,7 +71,7 @@ export async function submitDemoRequest(
 ): Promise<DemoRequestFormState> {
   if (normalizeSingleLineText(formData.get("website"))) {
     return {
-      message: "Thanks. Your demo request has been submitted successfully.",
+      message: "We'll contact you shortly.",
       status: "success",
     };
   }
@@ -155,7 +155,7 @@ export async function submitDemoRequest(
     if (existingRequest) {
       return {
         message:
-          "We already received this demo request and will follow up shortly.",
+          "We already received this demo request. We'll contact you shortly.",
         status: "success",
       };
     }
@@ -175,20 +175,21 @@ export async function submitDemoRequest(
     });
 
     try {
-      await sendAdminNotification({
-        fields: [
-          { label: "Parent name", value: parentName },
-          { label: "Child name", value: childName },
-          { label: "Child age", value: childAge.toString() },
-          { label: "City", value: city },
-          { label: "Email", value: email },
-          { label: "Phone", value: phone },
-          { label: "Program interest", value: programInterest },
-          { label: "Preferred slot", value: preferredSlot },
-          { label: "Notes", value: notes || null },
-        ],
-        subject: `New Book Demo submission from ${parentName}`,
-        title: "New Book Demo submission",
+      await sendAdminNotification("demo", {
+        details: [
+          `Child: ${childName}`,
+          `Age: ${childAge}`,
+          `City: ${city}`,
+          `Program: ${programInterest}`,
+          `Preferred slot: ${preferredSlot}`,
+          notes ? `Notes: ${notes}` : null,
+        ]
+          .filter(Boolean)
+          .join(" | "),
+        email,
+        message: notes || "Demo request submitted",
+        name: parentName,
+        phone,
       });
     } catch (error) {
       console.error("Failed to send demo request notification", error);
@@ -197,7 +198,7 @@ export async function submitDemoRequest(
     revalidatePath("/admin");
 
     return {
-      message: "Thanks. Your demo request has been submitted successfully.",
+      message: "We'll contact you shortly.",
       status: "success",
     };
   } catch (error) {
@@ -216,7 +217,7 @@ export async function submitContactMessage(
 ): Promise<ContactMessageFormState> {
   if (normalizeSingleLineText(formData.get("website"))) {
     return {
-      message: "Thanks. Your message has been sent successfully.",
+      message: "We'll contact you shortly.",
       status: "success",
     };
   }
@@ -276,7 +277,7 @@ export async function submitContactMessage(
     if (existingMessage) {
       return {
         message:
-          "We already received this message and will get back to you shortly.",
+          "We already received this message. We'll contact you shortly.",
         status: "success",
       };
     }
@@ -292,16 +293,12 @@ export async function submitContactMessage(
     });
 
     try {
-      await sendAdminNotification({
-        fields: [
-          { label: "Name", value: name },
-          { label: "Email", value: email },
-          { label: "Phone", value: phone },
-          { label: "Enquiry type", value: enquiryType },
-          { label: "Message", value: message },
-        ],
-        subject: `New Contact submission from ${name}`,
-        title: "New Contact submission",
+      await sendAdminNotification("contact", {
+        details: `Enquiry type: ${enquiryType}`,
+        email,
+        message,
+        name,
+        phone,
       });
     } catch (error) {
       console.error("Failed to send contact notification", error);
@@ -310,7 +307,7 @@ export async function submitContactMessage(
     revalidatePath("/admin");
 
     return {
-      message: "Thanks. Your message has been sent successfully.",
+      message: "We'll contact you shortly.",
       status: "success",
     };
   } catch (error) {
@@ -329,7 +326,7 @@ export async function submitFranchiseApplication(
 ): Promise<FranchiseApplicationFormState> {
   if (normalizeSingleLineText(formData.get("website"))) {
     return {
-      message: "Thanks. Your franchise application has been submitted.",
+      message: "We'll contact you shortly.",
       status: "success",
     };
   }
@@ -395,7 +392,7 @@ export async function submitFranchiseApplication(
     if (existingApplication) {
       return {
         message:
-          "We already received this franchise application and will follow up shortly.",
+          "We already received this franchise application. We'll contact you shortly.",
         status: "success",
       };
     }
@@ -412,17 +409,12 @@ export async function submitFranchiseApplication(
     });
 
     try {
-      await sendAdminNotification({
-        fields: [
-          { label: "Name", value: name },
-          { label: "Email", value: email },
-          { label: "Phone", value: phone },
-          { label: "City", value: city },
-          { label: "Experience", value: experience },
-          { label: "Message", value: message || null },
-        ],
-        subject: `New Franchise Application from ${name}`,
-        title: "New Franchise application",
+      await sendAdminNotification("franchise", {
+        details: [`City: ${city}`, `Experience: ${experience}`].join(" | "),
+        email,
+        message: message || "Franchise application submitted",
+        name,
+        phone,
       });
     } catch (error) {
       console.error("Failed to send franchise notification", error);
@@ -431,7 +423,7 @@ export async function submitFranchiseApplication(
     revalidatePath("/admin");
 
     return {
-      message: "Thanks. Your franchise application has been submitted.",
+      message: "We'll contact you shortly.",
       status: "success",
     };
   } catch (error) {

@@ -1,24 +1,19 @@
 const DEFAULT_WHATSAPP_MESSAGE =
-  "Hi, I would like to know more about Learn 'N' Fun Abacus.";
+  "Hi, I'm interested in Learn N Fun Abacus classes";
 
 function normalizeWhatsAppNumber(value: string) {
   return value.replace(/[^\d]/g, "");
 }
 
-export function getWhatsAppHref(
-  message?: string,
-  phoneNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "",
-) {
-  const normalizedNumber = normalizeWhatsAppNumber(phoneNumber.trim());
+export function getWhatsAppLink(message: string) {
+  const normalizedNumber = normalizeWhatsAppNumber(
+    (process.env.WHATSAPP_NUMBER ?? "").trim(),
+  );
 
   if (!normalizedNumber) {
     return null;
   }
 
-  const text =
-    message?.trim() ||
-    process.env.NEXT_PUBLIC_WHATSAPP_DEFAULT_MESSAGE?.trim() ||
-    DEFAULT_WHATSAPP_MESSAGE;
-
+  const text = message.trim() || DEFAULT_WHATSAPP_MESSAGE;
   return `https://wa.me/${normalizedNumber}?text=${encodeURIComponent(text)}`;
 }

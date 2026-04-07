@@ -70,6 +70,7 @@ export const navigationItems: NavigationItem[] = [
   { href: "/about", label: "About" },
   { href: "/programs", label: "Programs" },
   { href: "/book-demo", label: "Book Demo" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/contact", label: "Contact" },
   { href: "/testimonials", label: "Testimonials" },
   { href: "/franchise", label: "Franchise" },
@@ -92,10 +93,10 @@ export const companyInfo: CompanyInfo = {
 };
 
 export const companyStats = [
-  { value: "12+", label: "Years shaping early mental math habits" },
-  { value: "3,500+", label: "Children guided through structured programs" },
-  { value: "94%", label: "Families who continue beyond the trial stage" },
-  { value: "25+", label: "Community workshops and school tie-ups" },
+  { value: "Ages 5-14", label: "Programs designed for early mental math learners" },
+  { value: "Small batches", label: "Attention-friendly class environments" },
+  { value: "Hybrid-ready", label: "Online and in-center delivery options" },
+  { value: "Parent updates", label: "Clear progress guidance for families" },
 ];
 
 export const programs: Program[] = [
@@ -239,7 +240,7 @@ export const learningJourney: Step[] = [
   {
     title: "Assessment",
     description:
-      "We understand the child’s age, attention style, and learning comfort before recommending the right starting point.",
+      "We understand the child's age, attention style, and learning comfort before recommending the right starting point.",
   },
   {
     title: "Foundation",
@@ -260,46 +261,46 @@ export const learningJourney: Step[] = [
 
 export const testimonials: Testimonial[] = [
   {
-    parentName: "Priya Raman",
-    childName: "Ishaan",
+    parentName: "Spark Beginners family",
+    childName: "early learner",
     program: "Spark Beginners",
     quote:
-      "My son became noticeably calmer with numbers and actually looks forward to class days. The teachers know how to keep him engaged.",
+      "The class experience feels warm and age-appropriate, and our child is noticeably more comfortable with numbers.",
   },
   {
-    parentName: "Karthik Nair",
-    childName: "Diya",
+    parentName: "Focus Builders family",
+    childName: "developing learner",
     program: "Focus Builders",
     quote:
-      "We initially joined for mental math, but the biggest change has been her focus. Homework time is much less stressful now.",
+      "We joined for mental math support, but the bigger difference has been calmer focus and better confidence during homework.",
   },
   {
-    parentName: "Shruti Kapoor",
-    childName: "Aarav",
+    parentName: "Championship Track family",
+    childName: "advanced learner",
     program: "Championship Track",
     quote:
-      "The structured challenge in class helped my child build confidence on stage and in school competitions too.",
+      "The challenge level feels motivating, and the structured progression helps children grow into visible confidence.",
   },
   {
-    parentName: "Neha Joseph",
-    childName: "Mia",
+    parentName: "Admissions parent",
+    childName: "new student",
     program: "Spark Beginners",
     quote:
-      "The onboarding process was thoughtful and easy. We always know what Mia is learning and what to practice at home.",
+      "The onboarding flow feels thoughtful and clear. We always know what the next step is and how to support practice at home.",
   },
   {
-    parentName: "Rahul Bhatia",
-    childName: "Kabir",
+    parentName: "Parent support feedback",
+    childName: "regular learner",
     program: "Focus Builders",
     quote:
-      "The progress communication is excellent. It feels like a professional academy, but the classroom energy is still warm and child-friendly.",
+      "The progress communication feels polished and professional, but the classroom tone still stays warm and child-friendly.",
   },
   {
-    parentName: "Lavanya Iyer",
-    childName: "Sahana",
+    parentName: "Senior level family",
+    childName: "confident learner",
     program: "Championship Track",
     quote:
-      "The teachers push children in a healthy way. Sahana now enjoys challenge instead of feeling intimidated by it.",
+      "Children are pushed in a healthy, encouraging way, and the challenge starts to feel exciting instead of intimidating.",
   },
 ];
 
@@ -307,7 +308,7 @@ export const demoExpectations: Step[] = [
   {
     title: "Quick parent conversation",
     description:
-      "We understand your child’s age, schedule, previous activity exposure, and learning goals.",
+      "We understand your child's age, schedule, previous activity exposure, and learning goals.",
   },
   {
     title: "Sample class experience",
@@ -407,7 +408,7 @@ export const faqItems = [
   {
     question: "Do I need prior education business experience?",
     answer:
-      "Not necessarily. What matters most is commitment to quality delivery, local execution discipline, and alignment with the brand’s child-first philosophy.",
+      "Not necessarily. What matters most is commitment to quality delivery, local execution discipline, and alignment with the brand's child-first philosophy.",
   },
   {
     question: "Will franchise partners receive academic support?",

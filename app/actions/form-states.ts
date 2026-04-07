@@ -26,6 +26,19 @@ export type FranchiseApplicationField =
   | "name"
   | "phone";
 
+export type PortalLoginField = "email" | "password";
+
+export type PortalSignupField =
+  | "city"
+  | "confirmPassword"
+  | "email"
+  | "fullName"
+  | "password"
+  | "phone"
+  | "role"
+  | "studentAge"
+  | "studentName";
+
 export type AdminLoginState = {
   message?: string;
   status: "error" | "idle";
@@ -37,12 +50,22 @@ type ActionState<TField extends string> = {
   status: ActionStatus;
 };
 
+export type PortalLoginState = ActionState<PortalLoginField>;
+export type PortalSignupState = ActionState<PortalSignupField>;
 export type DemoRequestFormState = ActionState<DemoRequestField>;
 export type ContactMessageFormState = ActionState<ContactMessageField>;
 export type FranchiseApplicationFormState =
   ActionState<FranchiseApplicationField>;
 
 export const adminLoginInitialState: AdminLoginState = {
+  status: "idle",
+};
+
+export const portalLoginInitialState: PortalLoginState = {
+  status: "idle",
+};
+
+export const portalSignupInitialState: PortalSignupState = {
   status: "idle",
 };
 

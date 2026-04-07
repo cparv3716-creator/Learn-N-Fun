@@ -21,6 +21,11 @@ enum PublicationStatus {
   ARCHIVED
 }
 
+enum PortalRole {
+  PARENT
+  STUDENT
+}
+
 model Program {
   id          String            @id @default(cuid())
   slug        String            @unique
@@ -87,4 +92,32 @@ model FranchiseApplication {
   updatedAt  DateTime   @updatedAt
 
   @@map("FranchiseLead")
+}
+
+model PortalAccount {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  role         PortalRole
+  profile      PortalProfile?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model PortalProfile {
+  id                  String        @id @default(cuid())
+  accountId           String        @unique
+  fullName            String
+  studentName         String
+  studentAge          Int?
+  phone               String?
+  city                String?
+  programName         String?
+  preferredSlot       String?
+  modePreference      String?
+  recommendedLevel    String?
+  sourceDemoRequestId String?
+  account             PortalAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 }

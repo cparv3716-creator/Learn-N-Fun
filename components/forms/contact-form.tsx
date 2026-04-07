@@ -5,11 +5,16 @@ import { submitContactMessage } from "@/app/actions/enquiries";
 import { contactMessageInitialState } from "@/app/actions/form-states";
 import { buttonClassName } from "@/components/ui/button-link";
 import { WhatsAppFollowUpLink } from "@/components/ui/whatsapp-follow-up-link";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 
 const fieldClasses =
   "mt-2 w-full rounded-[22px] border border-navy-100 bg-white px-4 py-3.5 text-sm text-ink-600 shadow-sm transition focus:border-navy-300 focus:ring-4 focus:ring-navy-100/70 focus:outline-none";
 
-export function ContactForm() {
+type ContactFormProps = {
+  whatsAppLink?: string | null;
+};
+
+export function ContactForm({ whatsAppLink = null }: ContactFormProps) {
   const [state, formAction, pending] = useActionState(
     submitContactMessage,
     contactMessageInitialState,
@@ -23,7 +28,15 @@ export function ContactForm() {
   }, [state.status]);
 
   return (
-    <form action={formAction} ref={formRef}>
+    <form
+      action={formAction}
+      ref={formRef}
+      onSubmit={() =>
+        trackAnalyticsEvent("contact_form_submit", {
+          location: "contact_form",
+        })
+      }
+    >
       <div className="hidden" aria-hidden="true">
         <label>
           Website
@@ -147,16 +160,19 @@ export function ContactForm() {
           {pending ? "Sending..." : "Send message"}
         </button>
         {state.message ? (
-          <p
-            className={`text-sm font-medium ${
-              state.status === "success" ? "text-mint-500" : "text-coral-600"
-            }`}
-          >
-            {state.message}
-          </p>
+          state.status === "success" ? (
+            <div className="space-y-1 text-sm">
+              <p className="font-medium text-mint-500">We&apos;ll contact you shortly.</p>
+              <p className="text-ink-600">{state.message}</p>
+            </div>
+          ) : (
+            <p className="text-sm font-medium text-coral-600">
+              {state.message}
+            </p>
+          )
         ) : null}
         {state.status === "success" ? (
-          <WhatsAppFollowUpLink message="Hi, I just sent a contact enquiry through your website and would like to continue on WhatsApp." />
+          <WhatsAppFollowUpLink href={whatsAppLink} />
         ) : null}
       </div>
     </form>

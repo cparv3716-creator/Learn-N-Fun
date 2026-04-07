@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/react";
+import { FloatingWhatsAppCTA } from "@/components/ui/floating-whatsapp-cta";
+import { getWhatsAppLink } from "@/lib/whatsapp";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,9 +25,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const whatsAppHref = getWhatsAppLink(
+    "Hi, I'm interested in Learn N Fun Abacus classes",
+  );
+
   return (
     <html lang="en" data-scroll-behavior="smooth">
-      <body className="flex min-h-screen flex-col antialiased">{children}</body>
+      <body className="flex min-h-screen flex-col antialiased">
+        {children}
+        <FloatingWhatsAppCTA href={whatsAppHref} />
+        <Analytics />
+      </body>
     </html>
   );
 }
