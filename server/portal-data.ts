@@ -1,6 +1,10 @@
 import "server-only";
 
-import { AttendanceStatus, PaymentStatus } from "@prisma/client";
+import {
+  AttendanceStatus,
+  EnrollmentStatus,
+  PaymentStatus,
+} from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { PortalDashboardData } from "@/lib/portal/types";
 import type { PortalRole } from "@/server/portal-auth";
@@ -137,6 +141,10 @@ export async function getPortalDashboardData(
               take: 10,
             },
             sourceDemoRequest: true,
+            teacherNotes: {
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            },
           },
         },
       },
@@ -191,6 +199,10 @@ export async function getPortalDashboardData(
                   take: 10,
                 },
                 sourceDemoRequest: true,
+                teacherNotes: {
+                  orderBy: { createdAt: "desc" },
+                  take: 5,
+                },
               },
             },
           },
@@ -204,9 +216,14 @@ export async function getPortalDashboardData(
     }
 
     const currentEnrollment =
-      profile.enrollments.find((enrollment) =>
-        ["ACTIVE", "PENDING", "PAUSED"].includes(enrollment.status),
-      ) ?? profile.enrollments[0] ?? null;
+      profile.enrollments.find(
+        (enrollment) =>
+          enrollment.status === EnrollmentStatus.ACTIVE ||
+          enrollment.status === EnrollmentStatus.PENDING ||
+          enrollment.status === EnrollmentStatus.PAUSED,
+      ) ??
+      profile.enrollments[0] ??
+      null;
     const attendanceRecords = currentEnrollment
       ? profile.attendanceRecords.filter(
           (record) =>
@@ -227,6 +244,25 @@ export async function getPortalDashboardData(
       totalAttendanceCount > 0
         ? Math.round((presentCount / totalAttendanceCount) * 100)
         : null;
+
+    const teacherNotesItems =
+      profile.teacherNotes.length > 0
+        ? profile.teacherNotes.map((note) => ({
+            createdAtLabel: formatDate(note.createdAt) ?? "",
+            id: note.id,
+            message: note.message,
+            teacherName: note.teacherName,
+          }))
+        : profile.sourceDemoRequest?.notes
+          ? [
+              {
+                createdAtLabel: formatDate(profile.sourceDemoRequest.createdAt) ?? "",
+                id: profile.sourceDemoRequest.id,
+                message: profile.sourceDemoRequest.notes,
+                teacherName: "Admissions team",
+              },
+            ]
+          : [];
 
     return {
       assessments: {
@@ -322,20 +358,14 @@ export async function getPortalDashboardData(
         role: session.role,
       },
       teacherNotes: {
-        items: profile.sourceDemoRequest?.notes
-          ? [
-              {
-                createdAtLabel: formatDate(profile.sourceDemoRequest.createdAt) ?? "",
-                id: profile.sourceDemoRequest.id,
-                message: profile.sourceDemoRequest.notes,
-                teacherName: "Admissions team",
-              },
-            ]
-          : [],
-        note: profile.sourceDemoRequest?.notes
-          ? "The latest admissions note is linked to this student profile."
-          : "Teacher notes have not been added yet.",
-        state: profile.sourceDemoRequest?.notes ? "live" : "empty",
+        items: teacherNotesItems,
+        note:
+          profile.teacherNotes.length > 0
+            ? "Teacher feedback is now loaded from the learner record."
+            : profile.sourceDemoRequest?.notes
+              ? "The latest admissions note is linked to this student profile until classroom notes are added."
+              : "Teacher notes have not been added yet.",
+        state: teacherNotesItems.length > 0 ? "live" : "empty",
       },
     };
   } catch (error) {

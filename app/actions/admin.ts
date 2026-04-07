@@ -41,6 +41,12 @@ async function waitForFailedLoginResponse() {
   );
 }
 
+function revalidateAdminRoutes() {
+  revalidatePath("/admin");
+  revalidatePath("/admin/demo-bookings");
+  revalidatePath("/admin/enquiries");
+}
+
 function parseLeadStatus(
   value: FormDataEntryValue | null,
   allowedStatuses: LeadStatus[],
@@ -110,7 +116,7 @@ export async function updateDemoRequestStatus(id: string, formData: FormData) {
     where: { id },
   });
 
-  revalidatePath("/admin");
+  revalidateAdminRoutes();
 }
 
 export async function updateContactMessageStatus(
@@ -130,7 +136,7 @@ export async function updateContactMessageStatus(
     where: { id },
   });
 
-  revalidatePath("/admin");
+  revalidateAdminRoutes();
 }
 
 export async function updateFranchiseApplicationStatus(
@@ -150,5 +156,5 @@ export async function updateFranchiseApplicationStatus(
     where: { id },
   });
 
-  revalidatePath("/admin");
+  revalidateAdminRoutes();
 }

@@ -16,6 +16,7 @@ const requiredModelDelegates = [
   "attendance",
   "progress",
   "payment",
+  "teacherNote",
 ] as const;
 
 function createPrismaClient() {

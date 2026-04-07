@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   DemoBookingStatus,
+  DemoOpsStatus,
   EnrollmentStatus,
   LeadStatus,
   PaymentProvider,
@@ -82,6 +83,7 @@ export async function completeManualPaymentForAccount(accountId: string) {
       await tx.demoRequest.update({
         data: {
           bookingStatus: DemoBookingStatus.CONFIRMED,
+          opsStatus: DemoOpsStatus.CONVERTED,
           status: LeadStatus.CONTACTED,
         },
         where: { id: profile.sourceDemoRequestId },

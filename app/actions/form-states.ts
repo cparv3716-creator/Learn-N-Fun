@@ -47,6 +47,49 @@ export type AdminLoginState = {
   status: "error" | "idle";
 };
 
+export type StudentProfileField =
+  | "city"
+  | "currentLevel"
+  | "fullName"
+  | "modePreference"
+  | "phone"
+  | "portalEmail"
+  | "preferredSlot"
+  | "programName"
+  | "status"
+  | "studentAge"
+  | "studentName";
+
+export type EnrollmentField =
+  | "batchName"
+  | "currentLevel"
+  | "monthlyFeeInr"
+  | "portalProfileId"
+  | "programName"
+  | "startedAt"
+  | "status";
+
+export type AttendanceField =
+  | "classDate"
+  | "enrollmentId"
+  | "note"
+  | "portalProfileId"
+  | "status";
+
+export type ProgressField =
+  | "detail"
+  | "enrollmentId"
+  | "portalProfileId"
+  | "sortOrder"
+  | "status"
+  | "title";
+
+export type TeacherNoteField =
+  | "enrollmentId"
+  | "message"
+  | "portalProfileId"
+  | "teacherName";
+
 type ActionState<TField extends string> = {
   fieldErrors?: Partial<Record<TField, string>>;
   message?: string;
@@ -59,6 +102,11 @@ export type DemoRequestFormState = ActionState<DemoRequestField>;
 export type ContactMessageFormState = ActionState<ContactMessageField>;
 export type FranchiseApplicationFormState =
   ActionState<FranchiseApplicationField>;
+export type StudentProfileFormState = ActionState<StudentProfileField>;
+export type EnrollmentFormState = ActionState<EnrollmentField>;
+export type AttendanceFormState = ActionState<AttendanceField>;
+export type ProgressFormState = ActionState<ProgressField>;
+export type TeacherNoteFormState = ActionState<TeacherNoteField>;
 
 export const adminLoginInitialState: AdminLoginState = {
   status: "idle",
@@ -81,5 +129,25 @@ export const contactMessageInitialState: ContactMessageFormState = {
 };
 
 export const franchiseApplicationInitialState: FranchiseApplicationFormState = {
+  status: "idle",
+};
+
+export const studentProfileInitialState: StudentProfileFormState = {
+  status: "idle",
+};
+
+export const enrollmentInitialState: EnrollmentFormState = {
+  status: "idle",
+};
+
+export const attendanceInitialState: AttendanceFormState = {
+  status: "idle",
+};
+
+export const progressInitialState: ProgressFormState = {
+  status: "idle",
+};
+
+export const teacherNoteInitialState: TeacherNoteFormState = {
   status: "idle",
 };

@@ -20,11 +20,12 @@ export default async function AdminLoginPage() {
               Admin access
             </p>
             <h1 className="mt-4 text-3xl font-semibold sm:text-4xl">
-              Manage demo requests and contact enquiries in one place.
+              Manage admissions, students, and classroom operations in one place.
             </h1>
             <p className="mt-4 text-sm leading-7 text-sand-50/85 sm:text-base sm:leading-8">
-              Sign in with your admin credentials to review submissions, update
-              lead status, and keep follow-up work organized.
+              Sign in with your admin credentials to review demo bookings,
+              maintain learner records, update attendance and progress, and keep
+              the public enquiry queue organized.
             </p>
             <div className="mt-8">
               <ButtonLink className="w-full sm:w-auto" href="/">

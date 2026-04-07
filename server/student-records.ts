@@ -2,10 +2,12 @@ import "server-only";
 
 import {
   DemoBookingStatus,
+  DemoOpsStatus,
   EnrollmentStatus,
   PaymentProvider,
   PaymentStatus,
   ProgressStatus,
+  StudentProfileStatus,
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
@@ -136,6 +138,7 @@ export async function syncPortalProfileFromDemoRequest(
         programName: demoRequest.programInterest,
         recommendedLevel,
         sourceDemoRequestId: demoRequest.id,
+        status: StudentProfileStatus.ACTIVE,
         studentAge: demoRequest.childAge,
         studentName: demoRequest.childName,
       },
@@ -145,6 +148,7 @@ export async function syncPortalProfileFromDemoRequest(
     await tx.demoRequest.update({
       data: {
         bookingStatus: DemoBookingStatus.PENDING,
+        opsStatus: DemoOpsStatus.NEW,
         profileId,
       },
       where: { id: demoRequest.id },
@@ -164,6 +168,7 @@ export async function syncPortalProfileFromDemoRequest(
       existingEnrollment ??
       (await tx.enrollment.create({
         data: {
+          batchName: demoRequest.preferredSlot,
           currentLevel: recommendedLevel,
           currency: "INR",
           monthlyFeeInr,
@@ -180,6 +185,7 @@ export async function syncPortalProfileFromDemoRequest(
     if (existingEnrollment) {
       await tx.enrollment.update({
         data: {
+          batchName: demoRequest.preferredSlot,
           currentLevel: recommendedLevel,
           monthlyFeeInr,
           nextAssessmentAt,

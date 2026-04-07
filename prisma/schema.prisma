@@ -26,11 +26,24 @@ enum PortalRole {
   STUDENT
 }
 
+enum StudentProfileStatus {
+  ACTIVE
+  INACTIVE
+}
+
 enum DemoBookingStatus {
   PENDING
   CONFIRMED
   COMPLETED
   CANCELLED
+}
+
+enum DemoOpsStatus {
+  NEW
+  CONTACTED
+  BOOKED
+  COMPLETED
+  CONVERTED
 }
 
 enum EnrollmentStatus {
@@ -107,6 +120,7 @@ model DemoRequest {
   notes             String?
   status            LeadStatus        @default(NEW)
   bookingStatus     DemoBookingStatus @default(PENDING)
+  opsStatus         DemoOpsStatus     @default(NEW)
   accountId         String?
   profileId         String?
   account           PortalAccount?    @relation("PortalAccountDemoRequests", fields: [accountId], references: [id], onDelete: SetNull)
@@ -118,6 +132,7 @@ model DemoRequest {
   @@index([accountId])
   @@index([bookingStatus])
   @@index([email])
+  @@index([opsStatus])
   @@index([profileId])
 }
 
@@ -165,6 +180,7 @@ model PortalProfile {
   accountId           String        @unique
   fullName            String
   studentName         String
+  status              StudentProfileStatus @default(ACTIVE)
   studentAge          Int?
   phone               String?
   city                String?
@@ -180,6 +196,7 @@ model PortalProfile {
   attendanceRecords   Attendance[]
   progressRecords     Progress[]
   payments            Payment[]
+  teacherNotes        TeacherNote[]
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 }
@@ -188,6 +205,7 @@ model Enrollment {
   id                    String           @id @default(cuid())
   profileId             String
   programName           String
+  batchName             String?
   currentLevel          String?
   status                EnrollmentStatus @default(PENDING)
   monthlyFeeInr         Int?
@@ -203,6 +221,7 @@ model Enrollment {
   attendanceRecords     Attendance[]
   progressRecords       Progress[]
   payments              Payment[]
+  teacherNotes          TeacherNote[]
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
 
@@ -261,4 +280,18 @@ model Payment {
 
   @@index([accountId, status])
   @@index([profileId, status])
+}
+
+model TeacherNote {
+  id           String        @id @default(cuid())
+  profileId    String
+  enrollmentId String?
+  teacherName  String
+  message      String
+  profile      PortalProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  enrollment   Enrollment?   @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([profileId, createdAt])
 }
