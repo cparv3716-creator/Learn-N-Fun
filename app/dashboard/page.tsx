@@ -1,5 +1,7 @@
+import { payDashboardFees } from "@/app/actions/dashboard";
 import { logoutPortal } from "@/app/actions/portal";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
+import { PaymentButton } from "@/components/dashboard/payment-button";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { AnalyticsViewTracker } from "@/components/ui/analytics-view-tracker";
@@ -10,6 +12,8 @@ import type {
 } from "@/lib/portal/types";
 import { requirePortalSession } from "@/server/portal-auth";
 import { getPortalDashboardData } from "@/server/portal-data";
+
+export const dynamic = "force-dynamic";
 
 function StatusPill({
   label,
@@ -94,9 +98,9 @@ function SummaryCard({
 }
 
 function formatStateLabel(data: PortalDashboardData) {
-  return data.source === "demo_request"
-    ? "Connected from admissions data"
-    : "Integration-ready portal preview";
+  return data.source === "live_records"
+    ? "Connected from student records"
+    : "Awaiting student records";
 }
 
 export default async function PortalDashboardPage({
@@ -111,6 +115,10 @@ export default async function PortalDashboardPage({
     query.welcome === "signup"
       ? "Your dashboard account is ready. We'll contact you shortly with the next admissions steps."
       : null;
+  const paymentMessage =
+    query.payment === "success"
+      ? "Payment recorded successfully. Your dashboard has been updated with the latest status."
+      : null;
 
   return (
     <main className="py-8 sm:py-12">
@@ -119,10 +127,14 @@ export default async function PortalDashboardPage({
         payload={{ role: session.role }}
       />
       <Container>
-        {welcomeMessage ? (
+        {welcomeMessage || paymentMessage ? (
           <div className="mb-5 rounded-[26px] border border-mint-500/20 bg-mint-500/10 px-5 py-4 text-sm text-navy-900 shadow-[0_14px_32px_rgba(16,37,61,0.05)]">
-            <p className="font-semibold">Welcome to the dashboard.</p>
-            <p className="mt-1 leading-7 text-ink-600">{welcomeMessage}</p>
+            <p className="font-semibold">
+              {paymentMessage ? "Dashboard updated." : "Welcome to the dashboard."}
+            </p>
+            <p className="mt-1 leading-7 text-ink-600">
+              {paymentMessage ?? welcomeMessage}
+            </p>
           </div>
         ) : null}
         <div className="rounded-[34px] bg-[linear-gradient(135deg,#10253d_0%,#1b476f_58%,#336e9b_100%)] px-6 py-8 text-white shadow-[0_28px_75px_rgba(16,37,61,0.2)] sm:px-8 sm:py-10">
@@ -135,10 +147,9 @@ export default async function PortalDashboardPage({
                 Welcome back, {dashboardData.student.parentName}
               </h1>
               <p className="mt-4 text-sm leading-7 text-sand-50/85 sm:text-base sm:leading-8">
-                This dashboard is protected and ready for deeper integration.
-                Right now it combines live admissions-linked profile details with
-                premium placeholder sections for academics, attendance, and
-                payments.
+                This dashboard is protected and now reads from persisted student
+                records for profile details, enrollment progress, attendance
+                summaries, and payments.
               </p>
               <div className="mt-4 flex flex-wrap gap-3">
                 <StatusPill
@@ -147,7 +158,7 @@ export default async function PortalDashboardPage({
                 />
                 <StatusPill
                   label={formatStateLabel(dashboardData)}
-                  state={dashboardData.source === "demo_request" ? "live" : "placeholder"}
+                  state={dashboardData.source === "live_records" ? "live" : "placeholder"}
                 />
               </div>
             </div>
@@ -408,6 +419,11 @@ export default async function PortalDashboardPage({
                 }
                 state={dashboardData.payments.state}
               />
+              {dashboardData.payments.canPayNow ? (
+                <form action={payDashboardFees}>
+                  <PaymentButton />
+                </form>
+              ) : null}
               {dashboardData.payments.lastPaymentLabel ||
               dashboardData.payments.amountDueLabel ? (
                 <div className="grid gap-3 sm:grid-cols-2">

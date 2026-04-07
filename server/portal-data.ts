@@ -1,24 +1,16 @@
 import "server-only";
 
+import { AttendanceStatus, PaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { PortalDashboardData } from "@/lib/portal/types";
 import type { PortalRole } from "@/server/portal-auth";
+import { syncPortalProfileFromDemoRequest } from "@/server/student-records";
 
 type PortalSessionLike = {
   accountId: string;
   email: string;
   role: PortalRole;
 };
-
-function parseNotesValue(notes: string | null | undefined, label: string) {
-  if (!notes) {
-    return null;
-  }
-
-  const pattern = new RegExp(`${label}:\\s*([^|]+)`);
-  const match = notes.match(pattern);
-  return match?.[1]?.trim() ?? null;
-}
 
 function createDisplayName(email: string) {
   const rawValue = email.split("@")[0]?.replace(/[._-]/g, " ") || "Portal user";
@@ -30,6 +22,38 @@ function createDisplayName(email: string) {
     .join(" ");
 }
 
+function formatDate(date: Date | null | undefined) {
+  if (!date) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+  }).format(date);
+}
+
+function formatDateTime(date: Date | null | undefined) {
+  if (!date) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function formatCurrencyInr(amountInr: number | null | undefined) {
+  if (typeof amountInr !== "number") {
+    return null;
+  }
+
+  return new Intl.NumberFormat("en-IN", {
+    currency: "INR",
+    style: "currency",
+  }).format(amountInr);
+}
+
 function createPlaceholderDashboardData(
   email: string,
   role: PortalRole,
@@ -38,31 +62,33 @@ function createPlaceholderDashboardData(
     assessments: {
       nextAssessmentLabel: null,
       nextClassLabel: null,
-      note: "Class schedules and assessments will appear here once enrollment data is connected.",
+      note: "Class schedules and assessments will appear here once your enrollment is confirmed.",
       state: "empty",
     },
     attendance: {
       attendanceRate: null,
-      note: "Attendance will start syncing after the student is actively scheduled in regular classes.",
+      note: "Attendance will appear here once classes are underway.",
       presentCount: null,
       state: "empty",
       totalCount: null,
     },
     homework: {
-      note: "Homework and practice status will appear here when the classroom reporting layer is connected.",
+      note: "Homework and practice status will appear here once assignments are tracked for your class.",
       pendingLabel: null,
       state: "empty",
       submittedLabel: null,
     },
     payments: {
       amountDueLabel: null,
+      canPayNow: false,
       lastPaymentLabel: null,
-      note: "Payments are not connected yet. This space is ready for invoices, renewals, and receipts.",
-      state: "placeholder",
+      note: "Payments will appear here once an enrollment is set up.",
+      pendingPaymentId: null,
+      state: "empty",
     },
     progress: {
       milestones: [],
-      note: "Progress milestones will appear once the learning record system is connected.",
+      note: "Progress milestones will appear once your learner journey is created.",
       state: "empty",
     },
     source: "integration_ready_placeholder",
@@ -81,7 +107,7 @@ function createPlaceholderDashboardData(
     },
     teacherNotes: {
       items: [],
-      note: "Teacher notes will appear here once classroom feedback is available.",
+      note: "Teacher notes will appear here once the learner record includes classroom feedback.",
       state: "empty",
     },
   };
@@ -93,149 +119,223 @@ export async function getPortalDashboardData(
   try {
     const account = await prisma.portalAccount.findUnique({
       include: {
-        profile: true,
+        profile: {
+          include: {
+            attendanceRecords: {
+              orderBy: { classDate: "desc" },
+              take: 12,
+            },
+            enrollments: {
+              orderBy: { createdAt: "desc" },
+            },
+            payments: {
+              orderBy: { createdAt: "desc" },
+              take: 10,
+            },
+            progressRecords: {
+              orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+              take: 10,
+            },
+            sourceDemoRequest: true,
+          },
+        },
       },
       where: { id: session.accountId },
     });
 
-    if (!account) {
+    if (!account?.profile) {
       return createPlaceholderDashboardData(session.email, session.role);
     }
 
-    const profile = account.profile;
-    const linkedDemoRequestFromProfile = profile?.sourceDemoRequestId
-      ? await prisma.demoRequest.findUnique({
-          where: { id: profile.sourceDemoRequestId },
-        })
-      : null;
-    const linkedDemoRequest =
-      linkedDemoRequestFromProfile ??
-      (await prisma.demoRequest.findFirst({
-        orderBy: { createdAt: "desc" },
-        where: { email: account.email.toLowerCase() },
-      }));
+    let profile = account.profile;
 
-    const preferredDemoDate = parseNotesValue(
-      linkedDemoRequest?.notes,
-      "Preferred demo date",
+    if (
+      !profile.sourceDemoRequestId &&
+      profile.enrollments.length === 0 &&
+      profile.progressRecords.length === 0
+    ) {
+      const latestDemoRequest = await prisma.demoRequest.findFirst({
+        orderBy: { createdAt: "desc" },
+        where: {
+          OR: [{ accountId: account.id }, { email: account.email.toLowerCase() }],
+        },
+      });
+
+      if (latestDemoRequest) {
+        await prisma.demoRequest.update({
+          data: {
+            accountId: account.id,
+            profileId: profile.id,
+          },
+          where: { id: latestDemoRequest.id },
+        });
+        await syncPortalProfileFromDemoRequest(profile.id, latestDemoRequest.id);
+
+        const refreshedAccount = await prisma.portalAccount.findUnique({
+          include: {
+            profile: {
+              include: {
+                attendanceRecords: {
+                  orderBy: { classDate: "desc" },
+                  take: 12,
+                },
+                enrollments: {
+                  orderBy: { createdAt: "desc" },
+                },
+                payments: {
+                  orderBy: { createdAt: "desc" },
+                  take: 10,
+                },
+                progressRecords: {
+                  orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+                  take: 10,
+                },
+                sourceDemoRequest: true,
+              },
+            },
+          },
+          where: { id: session.accountId },
+        });
+
+        if (refreshedAccount?.profile) {
+          profile = refreshedAccount.profile;
+        }
+      }
+    }
+
+    const currentEnrollment =
+      profile.enrollments.find((enrollment) =>
+        ["ACTIVE", "PENDING", "PAUSED"].includes(enrollment.status),
+      ) ?? profile.enrollments[0] ?? null;
+    const attendanceRecords = currentEnrollment
+      ? profile.attendanceRecords.filter(
+          (record) =>
+            !record.enrollmentId || record.enrollmentId === currentEnrollment.id,
+        )
+      : profile.attendanceRecords;
+    const paidPayments = profile.payments.filter(
+      (payment) => payment.status === PaymentStatus.PAID,
     );
-    const preferredDemoTime = parseNotesValue(
-      linkedDemoRequest?.notes,
-      "Preferred demo time",
+    const pendingPayment = profile.payments.find(
+      (payment) => payment.status === PaymentStatus.PENDING,
     );
-    const demoMode = parseNotesValue(linkedDemoRequest?.notes, "Demo mode");
-    const notes = parseNotesValue(linkedDemoRequest?.notes, "Additional notes");
-    const profileName = profile?.studentName || linkedDemoRequest?.childName;
-    const parentName = profile?.fullName || linkedDemoRequest?.parentName;
-    const profileEmail = account.email;
+    const presentCount = attendanceRecords.filter(
+      (record) => record.status === AttendanceStatus.PRESENT,
+    ).length;
+    const totalAttendanceCount = attendanceRecords.length;
+    const attendanceRate =
+      totalAttendanceCount > 0
+        ? Math.round((presentCount / totalAttendanceCount) * 100)
+        : null;
 
     return {
       assessments: {
-        nextAssessmentLabel: linkedDemoRequest
-          ? "Scheduled after first month of regular classes"
-          : null,
-        nextClassLabel:
-          preferredDemoDate || preferredDemoTime
-            ? `${preferredDemoDate ?? "Date pending"}${preferredDemoTime ? ` at ${preferredDemoTime}` : ""}`
-            : null,
+        nextAssessmentLabel:
+          formatDateTime(currentEnrollment?.nextAssessmentAt) ?? null,
+        nextClassLabel: formatDateTime(currentEnrollment?.nextClassAt) ?? null,
         note:
-          preferredDemoDate || preferredDemoTime
-            ? "The next scheduled touchpoint is based on the latest demo request on file."
-            : linkedDemoRequest
-              ? "A confirmed next class and assessment will appear here once the classroom calendar is connected."
-              : "Your class schedule will appear here once admissions confirms the first regular batch.",
+          currentEnrollment?.nextClassAt || currentEnrollment?.nextAssessmentAt
+            ? "Upcoming class and assessment timings are now being tracked from the learner record."
+            : "The next class and assessment will show here once scheduled.",
         state:
-          preferredDemoDate || preferredDemoTime
-            ? "placeholder"
-            : linkedDemoRequest
-              ? "placeholder"
-              : "empty",
+          currentEnrollment?.nextClassAt || currentEnrollment?.nextAssessmentAt
+            ? "live"
+            : "empty",
       },
       attendance: {
-        attendanceRate: null,
-        note: "Attendance sync is integration-ready and will become live once regular class records are available.",
-        presentCount: null,
-        state: linkedDemoRequest ? "placeholder" : "empty",
-        totalCount: null,
+        attendanceRate,
+        note:
+          attendanceRate !== null
+            ? "Attendance is calculated from recorded class entries."
+            : "No attendance has been recorded yet.",
+        presentCount: attendanceRate !== null ? presentCount : null,
+        state: attendanceRate !== null ? "live" : "empty",
+        totalCount: attendanceRate !== null ? totalAttendanceCount : null,
       },
       homework: {
-        note:
-          "Homework tracking is ready for integration. Families will see practice completion once the reporting feed is connected.",
-        pendingLabel: null,
-        state: linkedDemoRequest ? "placeholder" : "empty",
-        submittedLabel: null,
+        note: currentEnrollment
+          ? "Practice completion is tracked from the current enrollment."
+          : "Practice status will appear once a class enrollment is active.",
+        pendingLabel:
+          currentEnrollment &&
+          currentEnrollment.practiceAssignedCount >
+            currentEnrollment.practiceCompletedCount
+            ? `${currentEnrollment.practiceAssignedCount - currentEnrollment.practiceCompletedCount} task(s) pending`
+            : null,
+        state: currentEnrollment ? "live" : "empty",
+        submittedLabel: currentEnrollment
+          ? `${currentEnrollment.practiceCompletedCount} / ${currentEnrollment.practiceAssignedCount} practice task(s) completed`
+          : null,
       },
       payments: {
-        amountDueLabel: null,
-        lastPaymentLabel: null,
-        note:
-          "Payments are not connected yet. This section is prepared for fee summaries, receipts, and renewal reminders.",
-        state: "placeholder",
+        amountDueLabel: pendingPayment
+          ? formatCurrencyInr(pendingPayment.amountInr)
+          : null,
+        canPayNow: Boolean(pendingPayment),
+        lastPaymentLabel: paidPayments[0]
+          ? `${formatCurrencyInr(paidPayments[0].amountInr)} on ${formatDate(paidPayments[0].paidAt ?? paidPayments[0].createdAt)}`
+          : null,
+        note: pendingPayment
+          ? "A pending payment is ready to be completed."
+          : paidPayments[0]
+            ? "Payment history is synced from completed records."
+            : "No payment has been recorded yet.",
+        pendingPaymentId: pendingPayment?.id ?? null,
+        state: profile.payments.length > 0 ? "live" : "empty",
       },
       progress: {
-        milestones: linkedDemoRequest
-          ? [
-              {
-                detail: "Demo request completed and level guidance is being prepared.",
-                id: "demo-booked",
-                label: "Demo booked",
-                status: "completed",
-              },
-              {
-                detail: "Admissions team will confirm the recommended starting level.",
-                id: "level-guidance",
-                label: "Level recommendation",
-                status: "in_progress",
-              },
-              {
-                detail: "Regular batch onboarding starts after admissions confirmation.",
-                id: "regular-class",
-                label: "Regular class onboarding",
-                status: "upcoming",
-              },
-            ]
-          : [],
-        note: linkedDemoRequest
-          ? "These milestones are generated from the admissions workflow until academic progress data is connected."
-          : "Progress milestones will appear once the learning record system is connected.",
-        state: linkedDemoRequest ? "placeholder" : "empty",
+        milestones: profile.progressRecords.map((record) => ({
+          detail: record.detail,
+          id: record.id,
+          label: record.title,
+          status:
+            record.status === "COMPLETED"
+              ? "completed"
+              : record.status === "IN_PROGRESS"
+                ? "in_progress"
+                : "upcoming",
+        })),
+        note:
+          profile.progressRecords.length > 0
+            ? "Progress milestones are now loaded from stored learner records."
+            : "No progress milestones have been recorded yet.",
+        state: profile.progressRecords.length > 0 ? "live" : "empty",
       },
-      source: linkedDemoRequest ? "demo_request" : "integration_ready_placeholder",
+      source: "live_records",
       student: {
-        age: profile?.studentAge ?? linkedDemoRequest?.childAge ?? null,
-        city: profile?.city ?? linkedDemoRequest?.city ?? null,
-        email: profileEmail,
-        modePreference: profile?.modePreference ?? demoMode ?? null,
-        name: profileName ?? createDisplayName(profileEmail),
+        age: profile.studentAge ?? null,
+        city: profile.city ?? null,
+        email: account.email,
+        modePreference: profile.modePreference ?? null,
+        name: profile.studentName ?? createDisplayName(account.email),
         parentName:
-          parentName ??
+          profile.fullName ??
           (session.role === "parent"
-            ? createDisplayName(profileEmail)
+            ? createDisplayName(account.email)
             : "Parent account linked later"),
-        preferredSlot:
-          profile?.preferredSlot ?? linkedDemoRequest?.preferredSlot ?? null,
-        programName:
-          profile?.programName ?? linkedDemoRequest?.programInterest ?? null,
-        recommendedLevel: profile?.recommendedLevel ?? null,
+        preferredSlot: currentEnrollment?.programName
+          ? profile.preferredSlot ?? null
+          : profile.preferredSlot ?? null,
+        programName: currentEnrollment?.programName ?? profile.programName ?? null,
+        recommendedLevel:
+          currentEnrollment?.currentLevel ?? profile.recommendedLevel ?? null,
         role: session.role,
       },
       teacherNotes: {
-        items: notes && linkedDemoRequest
+        items: profile.sourceDemoRequest?.notes
           ? [
               {
-                createdAtLabel: new Intl.DateTimeFormat("en-IN", {
-                  dateStyle: "medium",
-                }).format(linkedDemoRequest.createdAt),
-                id: linkedDemoRequest.id,
-                message: notes,
+                createdAtLabel: formatDate(profile.sourceDemoRequest.createdAt) ?? "",
+                id: profile.sourceDemoRequest.id,
+                message: profile.sourceDemoRequest.notes,
                 teacherName: "Admissions team",
               },
             ]
           : [],
-        note: notes
-          ? "The latest admissions note is shown below. Classroom teacher notes will appear after onboarding."
-          : "Teacher notes will appear once the student is enrolled and classroom reporting begins.",
-        state: notes ? "live" : "empty",
+        note: profile.sourceDemoRequest?.notes
+          ? "The latest admissions note is linked to this student profile."
+          : "Teacher notes have not been added yet.",
+        state: profile.sourceDemoRequest?.notes ? "live" : "empty",
       },
     };
   } catch (error) {

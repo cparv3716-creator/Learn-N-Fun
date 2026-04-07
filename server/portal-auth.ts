@@ -34,10 +34,6 @@ type PortalSession = {
 const PORTAL_SESSION_COOKIE = "learn_n_fun_portal_session";
 const PORTAL_SESSION_MAX_AGE = 60 * 60 * 12;
 
-function getEnvRaw(name: string) {
-  return process.env[name] ?? "";
-}
-
 function timingSafeEqualText(left: string, right: string) {
   const leftBuffer = crypto.createHash("sha256").update(left).digest();
   const rightBuffer = crypto.createHash("sha256").update(right).digest();
@@ -46,7 +42,7 @@ function timingSafeEqualText(left: string, right: string) {
 }
 
 function getPortalSecret() {
-  return getEnvRaw("PORTAL_SESSION_SECRET");
+  return process.env.PORTAL_SESSION_SECRET ?? "";
 }
 
 function toPortalRole(role: PrismaPortalRole): PortalRole {

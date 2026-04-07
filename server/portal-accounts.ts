@@ -3,6 +3,11 @@ import "server-only";
 import crypto from "node:crypto";
 import { PortalRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import {
+  getRecommendedLevel,
+  parseNotesValue,
+  syncPortalProfileFromDemoRequest,
+} from "@/server/student-records";
 
 const MAX_NAME_LENGTH = 80;
 const MAX_CITY_LENGTH = 80;
@@ -91,31 +96,6 @@ function isValidPhone(phone: string) {
 
 function normalizePhone(phone: string) {
   return phone.replace(/[^\d+]/g, "");
-}
-
-function parseNotesValue(notes: string | null | undefined, label: string) {
-  if (!notes) {
-    return null;
-  }
-
-  const pattern = new RegExp(`${label}:\\s*([^|]+)`);
-  const match = notes.match(pattern);
-  return match?.[1]?.trim() ?? null;
-}
-
-export function getRecommendedLevel(programName: string | null) {
-  switch (programName) {
-    case "Spark Beginners":
-      return "Foundation Entry";
-    case "Focus Builders":
-      return "Level 2 Starter";
-    case "Championship Track":
-      return "Advanced Track";
-    case "Need guidance":
-      return "Recommendation pending";
-    default:
-      return null;
-  }
 }
 
 export function hashPortalPassword(password: string) {
@@ -220,7 +200,9 @@ export async function registerPortalAccount(
     where: { email: input.email },
   });
 
-  const modePreference = parseNotesValue(linkedDemoRequest?.notes, "Demo mode");
+  const modePreference =
+    linkedDemoRequest?.mode ??
+    parseNotesValue(linkedDemoRequest?.notes, "Demo mode");
 
   const account = await prisma.portalAccount.create({
     data: {
@@ -247,9 +229,26 @@ export async function registerPortalAccount(
     select: {
       email: true,
       id: true,
+      profile: {
+        select: {
+          id: true,
+        },
+      },
       role: true,
     },
   });
+
+  if (linkedDemoRequest && account.profile?.id) {
+    await prisma.demoRequest.update({
+      data: {
+        accountId: account.id,
+        profileId: account.profile.id,
+      },
+      where: { id: linkedDemoRequest.id },
+    });
+
+    await syncPortalProfileFromDemoRequest(account.profile.id, linkedDemoRequest.id);
+  }
 
   return {
     accountId: account.id,

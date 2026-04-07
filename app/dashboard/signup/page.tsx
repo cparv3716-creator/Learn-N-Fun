@@ -5,6 +5,8 @@ import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { getPortalSession, isPortalAuthConfigured } from "@/server/portal-auth";
 
+export const dynamic = "force-dynamic";
+
 export default async function PortalSignupPage() {
   const session = await getPortalSession();
 

@@ -1,0 +1,8 @@
+
+> learn-n-fun-abacus@0.1.0 start
+> next start --port 3017
+
+▲ Next.js 16.2.1
+- Local:         http://localhost:3017
+- Network:       http://192.168.0.125:3017
+✓ Ready in 729ms

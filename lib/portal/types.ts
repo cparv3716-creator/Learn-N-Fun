@@ -65,8 +65,10 @@ export type PortalAssessmentSummary = {
 
 export type PortalPaymentSummary = {
   amountDueLabel: string | null;
+  canPayNow: boolean;
   lastPaymentLabel: string | null;
   note: string;
+  pendingPaymentId: string | null;
   state: DataState;
 };
 
@@ -76,7 +78,7 @@ export type PortalDashboardData = {
   homework: PortalHomeworkSummary;
   payments: PortalPaymentSummary;
   progress: PortalProgressSummary;
-  source: "demo_request" | "integration_ready_placeholder";
+  source: "integration_ready_placeholder" | "live_records";
   student: PortalStudentProfile;
   teacherNotes: PortalTeacherNotesSummary;
 };

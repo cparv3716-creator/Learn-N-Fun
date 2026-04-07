@@ -12,6 +12,10 @@ const requiredModelDelegates = [
   "franchiseApplication",
   "portalAccount",
   "portalProfile",
+  "enrollment",
+  "attendance",
+  "progress",
+  "payment",
 ] as const;
 
 function createPrismaClient() {

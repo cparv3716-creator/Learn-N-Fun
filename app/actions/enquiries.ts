@@ -12,6 +12,7 @@ import type {
 import { prisma } from "@/lib/prisma";
 import { programs } from "@/lib/site-data";
 import { sendAdminNotification } from "@/server/admin-notifications";
+import { syncPortalProfileFromDemoRequest } from "@/server/student-records";
 
 const DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
 const MAX_NAME_LENGTH = 80;
@@ -19,6 +20,7 @@ const MAX_CITY_LENGTH = 80;
 const MAX_NOTES_LENGTH = 1000;
 const MAX_MESSAGE_LENGTH = 2000;
 const MAX_EXPERIENCE_LENGTH = 1500;
+const demoModes = new Set(["Online", "Offline"]);
 const demoProgramOptions = new Set([
   ...programs.map((program) => program.name),
   "Need guidance",
@@ -61,6 +63,15 @@ function isWithinLength(value: string, maxLength: number) {
   return value.length <= maxLength;
 }
 
+function parsePreferredDemoDate(value: string) {
+  if (!value) {
+    return null;
+  }
+
+  const parsedDate = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+}
+
 function getDuplicateThreshold() {
   return new Date(Date.now() - DUPLICATE_WINDOW_MS);
 }
@@ -86,6 +97,14 @@ export async function submitDemoRequest(
   const preferredSlot =
     normalizeSingleLineText(formData.get("preferredSlot")) ||
     normalizeSingleLineText(formData.get("timeSlot"));
+  const preferredDemoDateValue = normalizeSingleLineText(
+    formData.get("preferredDemoDate"),
+  );
+  const preferredDemoDate = parsePreferredDemoDate(preferredDemoDateValue);
+  const preferredDemoTime = normalizeSingleLineText(
+    formData.get("preferredDemoTime"),
+  );
+  const demoMode = normalizeSingleLineText(formData.get("demoMode"));
   const notes = normalizeMultilineText(formData.get("notes"));
 
   const fieldErrors: Partial<Record<DemoRequestField, string>> = {};
@@ -122,6 +141,15 @@ export async function submitDemoRequest(
   } else if (!demoPreferredSlots.has(preferredSlot)) {
     fieldErrors.preferredSlot = "Please choose a valid preferred slot.";
   }
+  if (!preferredDemoDate) {
+    fieldErrors.preferredDemoDate = "Please choose a valid preferred demo date.";
+  }
+  if (!preferredDemoTime) {
+    fieldErrors.preferredDemoTime = "Please choose a preferred demo time.";
+  }
+  if (!demoMode || !demoModes.has(demoMode)) {
+    fieldErrors.demoMode = "Please choose a valid demo mode.";
+  }
   if (notes && !isWithinLength(notes, MAX_NOTES_LENGTH)) {
     fieldErrors.notes = "Please keep the notes under 1000 characters.";
   }
@@ -135,14 +163,29 @@ export async function submitDemoRequest(
   }
 
   try {
+    const linkedAccount = await prisma.portalAccount.findUnique({
+      select: {
+        id: true,
+        profile: {
+          select: {
+            id: true,
+          },
+        },
+      },
+      where: { email },
+    });
+
     const existingRequest = await prisma.demoRequest.findFirst({
       where: {
         childAge,
         childName,
         city,
         email,
+        mode: demoMode,
         parentName,
         phone,
+        preferredDemoDate: preferredDemoDate ?? undefined,
+        preferredDemoTime: preferredDemoTime || undefined,
         preferredSlot,
         programInterest,
         createdAt: {
@@ -160,19 +203,32 @@ export async function submitDemoRequest(
       };
     }
 
-    await prisma.demoRequest.create({
+    const createdRequest = await prisma.demoRequest.create({
       data: {
+        accountId: linkedAccount?.id ?? null,
         childAge,
         childName,
         city,
         email,
+        mode: demoMode,
         notes: notes || null,
         parentName,
         phone,
+        preferredDemoDate,
+        preferredDemoTime: preferredDemoTime || null,
         preferredSlot,
+        profileId: linkedAccount?.profile?.id ?? null,
         programInterest,
       },
     });
+
+    if (linkedAccount?.profile?.id) {
+      await syncPortalProfileFromDemoRequest(
+        linkedAccount.profile.id,
+        createdRequest.id,
+      );
+      revalidatePath("/dashboard");
+    }
 
     try {
       await sendAdminNotification("demo", {
@@ -182,6 +238,11 @@ export async function submitDemoRequest(
           `City: ${city}`,
           `Program: ${programInterest}`,
           `Preferred slot: ${preferredSlot}`,
+          preferredDemoDateValue
+            ? `Preferred demo date: ${preferredDemoDateValue}`
+            : null,
+          preferredDemoTime ? `Preferred demo time: ${preferredDemoTime}` : null,
+          demoMode ? `Mode: ${demoMode}` : null,
           notes ? `Notes: ${notes}` : null,
         ]
           .filter(Boolean)

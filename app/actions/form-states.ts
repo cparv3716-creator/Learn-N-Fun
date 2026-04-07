@@ -4,10 +4,13 @@ export type DemoRequestField =
   | "childAge"
   | "childName"
   | "city"
+  | "demoMode"
   | "email"
   | "notes"
   | "parentName"
   | "phone"
+  | "preferredDemoDate"
+  | "preferredDemoTime"
   | "preferredSlot"
   | "programInterest";
 

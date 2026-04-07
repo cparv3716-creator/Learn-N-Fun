@@ -1,4 +1,4 @@
-import { LeadStatus } from "@prisma/client";
+import { DemoBookingStatus, LeadStatus, PaymentStatus } from "@prisma/client";
 import Link from "next/link";
 import {
   logoutAdmin,
@@ -37,6 +37,10 @@ function formatLeadStatus(status: LeadStatus) {
   return status.charAt(0) + status.slice(1).toLowerCase();
 }
 
+function formatBookingStatus(status: DemoBookingStatus) {
+  return status.charAt(0) + status.slice(1).toLowerCase();
+}
+
 function getStatusBadgeClass(status: LeadStatus) {
   switch (status) {
     case LeadStatus.NEW:
@@ -50,6 +54,21 @@ function getStatusBadgeClass(status: LeadStatus) {
     case LeadStatus.APPROVED:
       return "border-mint-500/30 bg-mint-500/10 text-mint-500";
     case LeadStatus.REJECTED:
+      return "border-coral-400/30 bg-coral-400/10 text-coral-600";
+    default:
+      return "border-sand-200 bg-sand-100 text-ink-700";
+  }
+}
+
+function getBookingStatusBadgeClass(status: DemoBookingStatus) {
+  switch (status) {
+    case DemoBookingStatus.PENDING:
+      return "border-gold-400/40 bg-gold-400/15 text-navy-900";
+    case DemoBookingStatus.CONFIRMED:
+      return "border-navy-200 bg-navy-100/80 text-navy-900";
+    case DemoBookingStatus.COMPLETED:
+      return "border-mint-500/30 bg-mint-500/10 text-mint-500";
+    case DemoBookingStatus.CANCELLED:
       return "border-coral-400/30 bg-coral-400/10 text-coral-600";
     default:
       return "border-sand-200 bg-sand-100 text-ink-700";
@@ -144,6 +163,18 @@ function StatusBadge({ status }: { status: LeadStatus }) {
       )}`}
     >
       {formatLeadStatus(status)}
+    </span>
+  );
+}
+
+function BookingStatusBadge({ status }: { status: DemoBookingStatus }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${getBookingStatusBadgeClass(
+        status,
+      )}`}
+    >
+      {formatBookingStatus(status)}
     </span>
   );
 }
@@ -255,9 +286,35 @@ export default async function AdminDashboardPage({
   let franchiseApplications: Awaited<
     ReturnType<typeof prisma.franchiseApplication.findMany>
   > = [];
+  let studentProfiles: Array<{
+    account: {
+      email: string;
+      role: "PARENT" | "STUDENT";
+    };
+    city: string | null;
+    createdAt: Date;
+    fullName: string;
+    id: string;
+    payments: Array<{
+      amountInr: number;
+      createdAt: Date;
+      paidAt: Date | null;
+      status: PaymentStatus;
+    }>;
+    programName: string | null;
+    recommendedLevel: string | null;
+    studentName: string;
+    enrollments: Array<{
+      currentLevel: string | null;
+      monthlyFeeInr: number | null;
+      programName: string;
+      status: string;
+    }>;
+  }> = [];
   let demoRequestCount = 0;
   let contactMessageCount = 0;
   let franchiseApplicationCount = 0;
+  let studentProfileCount = 0;
   let newDemoRequestCount = 0;
   let newContactMessageCount = 0;
   let newFranchiseApplicationCount = 0;
@@ -268,9 +325,11 @@ export default async function AdminDashboardPage({
       demoRequests,
       contactMessages,
       franchiseApplications,
+      studentProfiles,
       demoRequestCount,
       contactMessageCount,
       franchiseApplicationCount,
+      studentProfileCount,
       newDemoRequestCount,
       newContactMessageCount,
       newFranchiseApplicationCount,
@@ -305,9 +364,30 @@ export default async function AdminDashboardPage({
                 status: franchiseStatus,
               },
       }),
+      prisma.portalProfile.findMany({
+        include: {
+          account: {
+            select: {
+              email: true,
+              role: true,
+            },
+          },
+          enrollments: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+          },
+          payments: {
+            orderBy: { createdAt: "desc" },
+            take: 2,
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      }),
       prisma.demoRequest.count(),
       prisma.contactMessage.count(),
       prisma.franchiseApplication.count(),
+      prisma.portalProfile.count(),
       prisma.demoRequest.count({ where: { status: LeadStatus.NEW } }),
       prisma.contactMessage.count({ where: { status: LeadStatus.NEW } }),
       prisma.franchiseApplication.count({ where: { status: LeadStatus.NEW } }),
@@ -355,12 +435,13 @@ export default async function AdminDashboardPage({
 
         <section className="mt-8 grid gap-4 sm:mt-10 sm:grid-cols-2 xl:grid-cols-3">
           {[
-            { label: "Demo requests", value: demoRequestCount.toString() },
+            { label: "Demo bookings", value: demoRequestCount.toString() },
             { label: "Contact messages", value: contactMessageCount.toString() },
             {
               label: "Franchise applications",
               value: franchiseApplicationCount.toString(),
             },
+            { label: "Students", value: studentProfileCount.toString() },
             { label: "New demos", value: newDemoRequestCount.toString() },
             { label: "New contacts", value: newContactMessageCount.toString() },
             {
@@ -393,9 +474,194 @@ export default async function AdminDashboardPage({
         ) : null}
 
         <SectionShell
+          eyebrow="Booking records"
+          title="Demo Booking Table"
+          subtitle="A compact operational view of the latest demo bookings, their preferred schedule, and booking stage."
+          countLabel={`Showing ${demoRequests.length} item${demoRequests.length === 1 ? "" : "s"}`}
+          filters={
+            <FilterBar
+              allLabel="All demos"
+              allowedStatuses={enquiryLeadStatuses}
+              filterKey="demoStatus"
+              filters={filters}
+              selectedStatus={demoStatus}
+            />
+          }
+        >
+          {demoRequests.length === 0 ? (
+            <EmptyState message="No demo bookings match the current filter." />
+          ) : (
+            <div className="overflow-hidden rounded-[24px] border border-sand-200 bg-white">
+              <div className="hidden grid-cols-[1.2fr_1fr_1fr_0.9fr_0.9fr] gap-4 border-b border-sand-200 bg-sand-100/70 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500 lg:grid">
+                <span>Family</span>
+                <span>Program</span>
+                <span>Preferred schedule</span>
+                <span>Booking</span>
+                <span>Lead</span>
+              </div>
+              <div className="divide-y divide-sand-200">
+                {demoRequests.map((request) => (
+                  <div
+                    key={`table-${request.id}`}
+                    className="grid gap-4 px-5 py-4 lg:grid-cols-[1.2fr_1fr_1fr_0.9fr_0.9fr] lg:items-start"
+                  >
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500 lg:hidden">
+                        Family
+                      </p>
+                      <p className="text-base font-semibold text-navy-900">
+                        {request.parentName}
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-ink-600">
+                        {request.childName} | Age {request.childAge}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500 lg:hidden">
+                        Program
+                      </p>
+                      <p className="text-sm font-medium text-navy-900">
+                        {request.programInterest}
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-ink-600">
+                        {request.preferredSlot}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500 lg:hidden">
+                        Preferred schedule
+                      </p>
+                      <p className="text-sm font-medium text-navy-900">
+                        {request.preferredDemoDate
+                          ? formatDate(request.preferredDemoDate)
+                          : "Date pending"}
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-ink-600">
+                        {request.preferredDemoTime ?? "Time pending"}
+                        {request.mode ? ` | ${request.mode}` : ""}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500 lg:hidden">
+                        Booking
+                      </p>
+                      <BookingStatusBadge status={request.bookingStatus} />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500 lg:hidden">
+                        Lead
+                      </p>
+                      <StatusBadge status={request.status} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </SectionShell>
+
+        <SectionShell
+          eyebrow="Student records"
+          title="Students"
+          subtitle="A compact view of the live student records linked to portal accounts, current enrollments, and payment state."
+          countLabel={`Showing ${studentProfiles.length} item${studentProfiles.length === 1 ? "" : "s"}`}
+          filters={<></>}
+        >
+          {studentProfiles.length === 0 ? (
+            <EmptyState message="No student profiles have been created yet." />
+          ) : (
+            <div className="overflow-hidden rounded-[24px] border border-sand-200 bg-white">
+              <div className="hidden grid-cols-[1.1fr_1fr_1fr_0.9fr_0.9fr] gap-4 border-b border-sand-200 bg-sand-100/70 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500 lg:grid">
+                <span>Student</span>
+                <span>Parent account</span>
+                <span>Program</span>
+                <span>Enrollment</span>
+                <span>Payment</span>
+              </div>
+              <div className="divide-y divide-sand-200">
+                {studentProfiles.map((profile) => {
+                  const enrollment = profile.enrollments[0] ?? null;
+                  const latestPayment = profile.payments[0] ?? null;
+
+                  return (
+                    <div
+                      key={profile.id}
+                      className="grid gap-4 px-5 py-4 lg:grid-cols-[1.1fr_1fr_1fr_0.9fr_0.9fr] lg:items-start"
+                    >
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500 lg:hidden">
+                          Student
+                        </p>
+                        <p className="text-base font-semibold text-navy-900">
+                          {profile.studentName}
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-ink-600">
+                          {profile.fullName}
+                          {profile.city ? ` | ${profile.city}` : ""}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500 lg:hidden">
+                          Parent account
+                        </p>
+                        <p className="text-sm font-medium text-navy-900">
+                          {profile.account.email}
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-ink-600">
+                          {profile.account.role === "PARENT" ? "Parent login" : "Student login"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500 lg:hidden">
+                          Program
+                        </p>
+                        <p className="text-sm font-medium text-navy-900">
+                          {enrollment?.programName ?? profile.programName ?? "Program pending"}
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-ink-600">
+                          {enrollment?.currentLevel ??
+                            profile.recommendedLevel ??
+                            "Level pending"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500 lg:hidden">
+                          Enrollment
+                        </p>
+                        <p className="text-sm font-medium text-navy-900">
+                          {enrollment?.status ?? "Not enrolled"}
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-ink-600">
+                          {enrollment?.monthlyFeeInr
+                            ? `INR ${enrollment.monthlyFeeInr.toLocaleString("en-IN")} / month`
+                            : "Fee pending"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-500 lg:hidden">
+                          Payment
+                        </p>
+                        <p className="text-sm font-medium text-navy-900">
+                          {latestPayment?.status ?? "No payment"}
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-ink-600">
+                          {latestPayment
+                            ? `INR ${latestPayment.amountInr.toLocaleString("en-IN")}`
+                            : "No records yet"}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </SectionShell>
+
+        <SectionShell
           eyebrow="Book demo submissions"
-          title="Demo Requests"
-          subtitle="Scan new requests first, then filter the list by follow-up stage as the team works through outreach."
+          title="Demo Bookings"
+          subtitle="Review live demo bookings, preferred schedules, and both booking and outreach status from one place."
           countLabel={`Showing ${demoRequests.length} item${demoRequests.length === 1 ? "" : "s"}`}
           filters={
             <FilterBar
@@ -427,6 +693,7 @@ export default async function AdminDashboardPage({
                               {request.parentName}
                             </h3>
                             <StatusBadge status={request.status} />
+                            <BookingStatusBadge status={request.bookingStatus} />
                           </div>
                           <p className="mt-1 text-sm leading-6 text-ink-600">
                             Parent of {request.childName}, age {request.childAge}
@@ -446,8 +713,28 @@ export default async function AdminDashboardPage({
                           value={request.programInterest}
                         />
                         <DetailItem
+                          label="Booking status"
+                          value={formatBookingStatus(request.bookingStatus)}
+                        />
+                        <DetailItem
                           label="Preferred slot"
                           value={request.preferredSlot}
+                        />
+                        <DetailItem
+                          label="Preferred date"
+                          value={
+                            request.preferredDemoDate
+                              ? formatDate(request.preferredDemoDate)
+                              : "Pending"
+                          }
+                        />
+                        <DetailItem
+                          label="Preferred time"
+                          value={request.preferredDemoTime ?? "Pending"}
+                        />
+                        <DetailItem
+                          label="Mode"
+                          value={request.mode ?? "Pending"}
                         />
                         <DetailItem
                           label="Fresh item"

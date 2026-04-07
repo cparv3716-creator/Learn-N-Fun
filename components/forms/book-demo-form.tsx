@@ -403,6 +403,11 @@ export function BookDemoForm({ whatsAppLink = null }: BookDemoFormProps) {
                 value={preferredDemoDate}
                 onChange={(event) => setPreferredDemoDate(event.target.value)}
               />
+              {state.fieldErrors?.preferredDemoDate ? (
+                <p className="mt-2 text-xs text-coral-600">
+                  {state.fieldErrors.preferredDemoDate}
+                </p>
+              ) : null}
             </label>
             <label className="text-sm font-medium text-navy-900">
               Preferred demo time
@@ -414,6 +419,11 @@ export function BookDemoForm({ whatsAppLink = null }: BookDemoFormProps) {
                 value={preferredDemoTime}
                 onChange={(event) => setPreferredDemoTime(event.target.value)}
               />
+              {state.fieldErrors?.preferredDemoTime ? (
+                <p className="mt-2 text-xs text-coral-600">
+                  {state.fieldErrors.preferredDemoTime}
+                </p>
+              ) : null}
             </label>
             <div className="text-sm font-medium text-navy-900 sm:col-span-2">
               Demo mode
@@ -452,6 +462,11 @@ export function BookDemoForm({ whatsAppLink = null }: BookDemoFormProps) {
                   </label>
                 ))}
               </div>
+              {state.fieldErrors?.demoMode ? (
+                <p className="mt-2 text-xs text-coral-600">
+                  {state.fieldErrors.demoMode}
+                </p>
+              ) : null}
             </div>
             <label className="text-sm font-medium text-navy-900 sm:col-span-2">
               Anything else we should know?

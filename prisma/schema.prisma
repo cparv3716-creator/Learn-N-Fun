@@ -26,6 +26,46 @@ enum PortalRole {
   STUDENT
 }
 
+enum DemoBookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum EnrollmentStatus {
+  PENDING
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  EXCUSED
+}
+
+enum ProgressStatus {
+  COMPLETED
+  IN_PROGRESS
+  UPCOMING
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum PaymentProvider {
+  MANUAL
+  STRIPE
+  RAZORPAY
+}
+
 model Program {
   id          String            @id @default(cuid())
   slug        String            @unique
@@ -52,19 +92,33 @@ model Testimonial {
 }
 
 model DemoRequest {
-  id              String     @id @default(cuid())
-  parentName      String
-  childName       String
-  childAge        Int
-  city            String
-  email           String
-  phone           String
-  programInterest String
-  preferredSlot   String
-  notes           String?
-  status          LeadStatus @default(NEW)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  id                String            @id @default(cuid())
+  parentName        String
+  childName         String
+  childAge          Int
+  city              String
+  email             String
+  phone             String
+  programInterest   String
+  preferredSlot     String
+  preferredDemoDate DateTime?
+  preferredDemoTime String?
+  mode              String?
+  notes             String?
+  status            LeadStatus        @default(NEW)
+  bookingStatus     DemoBookingStatus @default(PENDING)
+  accountId         String?
+  profileId         String?
+  account           PortalAccount?    @relation("PortalAccountDemoRequests", fields: [accountId], references: [id], onDelete: SetNull)
+  profile           PortalProfile?    @relation("PortalProfileDemoRequests", fields: [profileId], references: [id], onDelete: SetNull)
+  sourceProfiles    PortalProfile[]   @relation("PortalProfileSourceDemoRequest")
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([accountId])
+  @@index([bookingStatus])
+  @@index([email])
+  @@index([profileId])
 }
 
 model ContactMessage {
@@ -100,6 +154,8 @@ model PortalAccount {
   passwordHash String
   role         PortalRole
   profile      PortalProfile?
+  demoRequests DemoRequest[] @relation("PortalAccountDemoRequests")
+  payments     Payment[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -118,6 +174,91 @@ model PortalProfile {
   recommendedLevel    String?
   sourceDemoRequestId String?
   account             PortalAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  sourceDemoRequest   DemoRequest?  @relation("PortalProfileSourceDemoRequest", fields: [sourceDemoRequestId], references: [id], onDelete: SetNull)
+  demoRequests        DemoRequest[] @relation("PortalProfileDemoRequests")
+  enrollments         Enrollment[]
+  attendanceRecords   Attendance[]
+  progressRecords     Progress[]
+  payments            Payment[]
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
+}
+
+model Enrollment {
+  id                    String           @id @default(cuid())
+  profileId             String
+  programName           String
+  currentLevel          String?
+  status                EnrollmentStatus @default(PENDING)
+  monthlyFeeInr         Int?
+  currency              String           @default("INR")
+  nextClassAt           DateTime?
+  nextAssessmentAt      DateTime?
+  practiceAssignedCount Int              @default(0)
+  practiceCompletedCount Int             @default(0)
+  notes                 String?
+  startedAt             DateTime         @default(now())
+  endedAt               DateTime?
+  profile               PortalProfile    @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  attendanceRecords     Attendance[]
+  progressRecords       Progress[]
+  payments              Payment[]
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@index([profileId, status])
+}
+
+model Attendance {
+  id           String           @id @default(cuid())
+  profileId    String
+  enrollmentId String?
+  classDate    DateTime
+  status       AttendanceStatus
+  note         String?
+  profile      PortalProfile    @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  enrollment   Enrollment?      @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  createdAt    DateTime         @default(now())
+
+  @@index([profileId, classDate])
+}
+
+model Progress {
+  id           String      @id @default(cuid())
+  profileId    String
+  enrollmentId String?
+  title        String
+  detail       String
+  status       ProgressStatus
+  sortOrder    Int         @default(0)
+  achievedAt   DateTime?
+  profile      PortalProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  enrollment   Enrollment?   @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([profileId, sortOrder])
+}
+
+model Payment {
+  id                String          @id @default(cuid())
+  accountId         String?
+  profileId         String
+  enrollmentId      String?
+  amountInr         Int
+  currency          String          @default("INR")
+  status            PaymentStatus   @default(PENDING)
+  provider          PaymentProvider @default(MANUAL)
+  providerReference String?
+  description       String?
+  dueDate           DateTime?
+  paidAt            DateTime?
+  account           PortalAccount?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  profile           PortalProfile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  enrollment        Enrollment?     @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([accountId, status])
+  @@index([profileId, status])
 }
